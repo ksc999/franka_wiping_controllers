@@ -1,0 +1,7 @@
+<library path="lib/libfranka_wiping_controllers">
+  <class name="franka_wiping_controllers/ForceController" type="franka_wiping_controllers::ForceController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A self-defined force controller for ISRLab wiping task.
+    </description>
+  </class>
+</library>
