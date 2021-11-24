@@ -31,6 +31,7 @@ bool ForceController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
 
+  // get FrankaModelInterface and its handle to read dynamic and kinematic from the robot
   auto* model_interface = robot_hw->get<franka_hw::FrankaModelInterface>();
   if (model_interface == nullptr) {
     ROS_ERROR_STREAM("ForceController: Error getting model interface from hardware");
@@ -45,6 +46,7 @@ bool ForceController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
 
+  // get FrankaStateInterface and its handle to read full robot state
   auto* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
   if (state_interface == nullptr) {
     ROS_ERROR_STREAM("ForceController: Error getting state interface from hardware");
@@ -59,6 +61,7 @@ bool ForceController::init(hardware_interface::RobotHW* robot_hw,
     return false;
   }
 
+  // get EffortJointInterface in ros control and its 7 joint handles to send commands to the robot
   auto* effort_joint_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   if (effort_joint_interface == nullptr) {
     ROS_ERROR_STREAM("ForceController: Error getting effort joint interface from hardware");
@@ -77,7 +80,6 @@ bool ForceController::init(hardware_interface::RobotHW* robot_hw,
       ros::NodeHandle("dynamic_reconfigure_desired_mass_param_node");
   dynamic_server_desired_mass_param_ = std::make_unique<
       dynamic_reconfigure::Server<franka_wiping_controllers::desired_mass_paramConfig>>(
-
       dynamic_reconfigure_desired_mass_param_node_);
   dynamic_server_desired_mass_param_->setCallback(
       boost::bind(&ForceController::desiredMassParamCallback, this, _1, _2));
@@ -87,7 +89,9 @@ bool ForceController::init(hardware_interface::RobotHW* robot_hw,
 
 void ForceController::starting(const ros::Time& /*time*/) {
   franka::RobotState robot_state = state_handle_->getRobotState();
+  // call: getGravity(gravity_earth={ {0., 0., -9.81}})	
   std::array<double, 7> gravity_array = model_handle_->getGravity();
+  // robot_state.tau_J: Measured link-side joint torque sensor signals
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(robot_state.tau_J.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
   // Bias correction for the current external torque
